@@ -1,0 +1,193 @@
+.waiting-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f8faf8;
+  padding-bottom: 40px;
+}
+
+/* ── 헤더 ── */
+.waiting-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 52px 20px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f0f5f3;
+}
+
+.back-btn-w {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  color: #1a3d36;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 2px;
+}
+
+.waiting-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a3d36;
+}
+
+/* ── 도착 예정 카드 ── */
+.arrival-card {
+  margin: 16px 16px 0;
+  background: #35C8B4;
+  border-radius: 24px;
+  padding: 26px 24px 22px;
+  text-align: center;
+  transition: background 0.5s ease;
+}
+
+.arrival-card.arrived { background: #A4CF4A; }
+
+.arrival-time {
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.arrival-sub {
+  font-size: 14px;
+  color: rgba(255,255,255,0.88);
+  font-weight: 500;
+  margin-bottom: 18px;
+}
+
+/* 점 애니메이션 */
+@keyframes dotPulse {
+  0%, 60%, 100% { opacity: 0.25; transform: scale(0.75); }
+  30%           { opacity: 1;    transform: scale(1);    }
+}
+
+.dots-anim {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ── 실시간 지도 ── */
+.waiting-map-wrap {
+  margin: 12px 16px 0;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  position: relative;
+}
+
+.waiting-map {
+  height: 220px;
+  width: 100%;
+}
+
+.map-legend {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 12px;
+  z-index: 500;
+  pointer-events: none;
+}
+
+.legend-item {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(4px);
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.legend-item.dep  { color: #35C8B4; }
+.legend-item.dest { color: #6aaa20; }
+
+/* ── 차량 정보 카드 ── */
+.vehicle-info-card {
+  margin: 12px 16px 0;
+  background: #fff;
+  border-radius: 20px;
+  padding: 4px 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+}
+
+.vi-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #f0f5f3;
+}
+
+.vi-row:last-child { border-bottom: none; }
+
+.vi-label { font-size: 14px; color: #8ab9b2; font-weight: 500; }
+.vi-value { font-size: 14px; font-weight: 700; color: #1a3d36; }
+.vi-eta   { color: #35C8B4; }
+
+/* ── 취소 버튼 ── */
+.cancel-wrap { padding: 20px 16px 0; }
+
+.cancel-btn {
+  width: 100%;
+  padding: 15px;
+  border: 1.5px solid #d8edea;
+  border-radius: 50px;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: #9abfba;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.cancel-btn:active {
+  background: #f5fcfa;
+  border-color: #c0dcd8;
+}
+
+/* ── MVP 전용: 리뷰 바로가기 ── */
+.mvp-skip-wrap {
+  padding: 10px 16px 0;
+  text-align: center;
+}
+
+.mvp-skip-btn {
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  color: #b0ccc8;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 6px 12px;
+}
+
+.mvp-skip-btn:active { color: #35C8B4; }

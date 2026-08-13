@@ -1,0 +1,174 @@
+/* ── 오버레이 ── */
+.popup-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: overlayIn 0.25s ease both;
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── 카드 ── */
+.popup-card {
+  width: 100%;
+  max-width: 340px;
+  background: #fff;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  position: relative;
+  animation: cardIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: scale(0.82) translateY(20px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+
+/* 닫기 버튼 */
+.popup-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.18);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.15s;
+}
+
+.popup-close:active { background: rgba(0,0,0,0.32); }
+
+/* 광고 배지 */
+.popup-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(0, 0, 0, 0.22);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 10px;
+  letter-spacing: 0.04em;
+  z-index: 10;
+}
+
+/* 이미지 영역 */
+.popup-img-area {
+  background: linear-gradient(135deg, #ff9a56 0%, #e05f20 100%);
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.popup-food-emoji {
+  font-size: 56px;
+  line-height: 1;
+}
+
+.popup-img-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* 본문 */
+.popup-body {
+  padding: 18px 20px 20px;
+}
+
+.popup-store {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
+}
+
+.popup-desc {
+  font-size: 13px;
+  color: #5a5a5a;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.popup-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.popup-info span {
+  font-size: 12px;
+  color: #777;
+  font-weight: 500;
+}
+
+/* 태그 */
+.popup-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.popup-tag {
+  background: #fff4ed;
+  color: #c8622a;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* 정보 행 (아이콘 + 텍스트) */
+.popup-info-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 자세히 알아보기 링크 버튼 */
+.popup-learn-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 13px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ff9a56 0%, #e05f20 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(224, 95, 32, 0.35);
+  transition: opacity 0.15s;
+  letter-spacing: -0.2px;
+}
+
+.popup-learn-btn:active { opacity: 0.85; }

@@ -1,0 +1,558 @@
+.booking-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: #f8faf8;
+  padding-bottom: 84px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── 헤더 ── */
+.booking-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 18px 6px;
+  background: #fff;
+  border-bottom: 1px solid #f0f5f3;
+  flex-shrink: 0;
+}
+
+.back-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  color: #1a3d36;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 2px;
+}
+
+.booking-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a3d36;
+}
+
+/* ── 출발/목적지 폼 ── */
+.route-form-card {
+  background: #dff0c0;
+  padding: 6px 18px 8px;
+  flex-shrink: 0;
+}
+
+.route-field-group {
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.route-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a7a38;
+  margin-bottom: 3px;
+}
+
+.route-input {
+  background: #fff;
+  border-radius: 14px;
+  padding: 7px 16px;
+  border: 2px solid transparent;
+}
+
+.route-input-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a3d36;
+}
+
+/* 목적지 검색 인풋 */
+.route-search-input {
+  width: 100%;
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 7px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a3d36;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.route-search-input:focus,
+.route-search-input.has-value {
+  border-color: #35C8B4;
+}
+
+.route-search-input::placeholder { color: #b0ccc8; }
+
+/* 드롭다운 */
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+  z-index: 200;
+  overflow: hidden;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.dropdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 12px 18px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-bottom: 1px solid #f5f9f7;
+  text-align: left;
+  transition: background 0.12s;
+}
+
+.dropdown-item:last-child { border-bottom: none; }
+.dropdown-item:active,
+.dropdown-item.active     { background: #edfaf6; }
+
+.di-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a3d36;
+}
+
+.di-addr {
+  font-size: 12px;
+  color: #9abfba;
+  margin-top: 2px;
+}
+
+.dropdown-empty {
+  padding: 14px 18px;
+  font-size: 13px;
+  color: #a0c4be;
+  text-align: center;
+}
+
+.swap-row {
+  display: flex;
+  justify-content: center;
+  margin: 3px 0;
+}
+
+.swap-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid #b8e0d4;
+  background: #fff;
+  color: #35C8B4;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(53,200,180,0.15);
+  transition: all 0.15s ease;
+  position: relative;
+  top: -1px;
+}
+
+.swap-btn.swap-inactive {
+  opacity: 0.4;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* ── 지도 ── */
+.booking-map-wrap {
+  margin: 0;
+  height: 108px;
+  flex-shrink: 0;
+}
+
+.booking-map {
+  height: 100%;
+  width: 100%;
+}
+
+/* ── 섹션 카드 공통 ── */
+.booking-card {
+  margin: 6px 16px 0;
+  background: #fff;
+  border-radius: 18px;
+  padding: 10px 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  flex-shrink: 0;
+}
+
+.booking-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a3d36;
+  margin-bottom: 8px;
+}
+
+/* ── 탑승 시간 ── */
+.time-row {
+  display: flex;
+  gap: 6px;
+}
+
+.time-chip {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 3px;
+  border: 1.5px solid #d4ede8;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  gap: 3px;
+}
+
+.time-chip.active {
+  background: #35C8B4;
+  border-color: #35C8B4;
+  box-shadow: 0 3px 10px rgba(53,200,180,0.3);
+}
+
+.chip-mins {
+  font-size: 11px;
+  font-weight: 700;
+  color: #35C8B4;
+}
+
+.chip-clock {
+  font-size: 10px;
+  font-weight: 500;
+  color: #7ab8ae;
+}
+
+.time-chip.active .chip-mins,
+.time-chip.active .chip-clock { color: #fff; }
+
+.custom-time-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #f5fbf9;
+  border-radius: 14px;
+  border: 1.5px solid #35C8B4;
+}
+
+.custom-time-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a7a70;
+}
+
+.custom-time-input {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  font-weight: 700;
+  color: #35C8B4;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+.time-note {
+  font-size: 11px;
+  color: #9abfba;
+  text-align: center;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+/* ── 인원 선택 ── */
+.pax-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
+.pax-row + .pax-row { margin-top: 10px; }
+
+.pax-type { font-size: 14px; font-weight: 500; color: #1a3d36; }
+
+.pax-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pax-minus,
+.pax-plus {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: 300;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all 0.15s;
+}
+
+.pax-minus {
+  border: 1.5px solid #d4ede8;
+  background: #fff;
+  color: #7ab8ae;
+}
+
+.pax-minus:disabled { opacity: 0.35; cursor: default; }
+
+.pax-plus {
+  border: none;
+  background: #35C8B4;
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(53,200,180,0.35);
+}
+
+.pax-count {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a3d36;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ── 요금 안내 ── */
+.fare-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 8px;
+  padding: 0 20px;
+}
+
+.fare-unit  { color: #5a9990; }
+.fare-divider { color: #c0dcd8; }
+.fare-total { color: #5a9990; }
+.fare-total strong { color: #1a3d36; font-weight: 700; font-size: 15px; }
+
+.booking-validation {
+  margin: 6px 18px 0;
+  color: #d05b38;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ── 예약 확정 버튼 ── */
+.confirm-wrap {
+  padding: 6px 16px 0;
+  flex-shrink: 0;
+}
+
+.confirm-btn {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #35C8B4 0%, #A4CF4A 100%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(53,200,180,0.35);
+  letter-spacing: -0.3px;
+  transition: all 0.18s ease;
+}
+
+.confirm-btn:active:not(.disabled) {
+  transform: scale(0.98);
+  box-shadow: 0 3px 10px rgba(53,200,180,0.3);
+}
+
+.confirm-btn.disabled {
+  background: #d4e8e4;
+  box-shadow: none;
+  color: #a8c8c2;
+  cursor: pointer;
+}
+
+.payment-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 14px 92px;
+  background: rgba(10, 35, 31, 0.34);
+}
+
+.payment-sheet {
+  width: 100%;
+  border-radius: 24px;
+  background: #fff;
+  padding: 12px 16px 16px;
+  box-shadow: 0 -18px 50px rgba(17, 39, 35, 0.22);
+}
+
+.payment-sheet-handle {
+  width: 44px;
+  height: 4px;
+  margin: 0 auto 14px;
+  border-radius: 999px;
+  background: #dbe8e5;
+}
+
+.payment-sheet h3 {
+  color: #153e36;
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.payment-summary {
+  margin: 4px 0 13px;
+  color: #6b8b86;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.payment-option {
+  width: 100%;
+  min-height: 66px;
+  border: 1.5px solid #e3efec;
+  border-radius: 16px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.payment-option + .payment-option {
+  margin-top: 8px;
+}
+
+.payment-option.primary {
+  border-color: rgba(53, 200, 180, 0.44);
+  background: #effbf8;
+}
+
+.payment-option.naver {
+  border-color: rgba(3, 199, 90, 0.4);
+  background: #f0fff7;
+}
+
+.payment-option.kakao {
+  border-color: rgba(240, 210, 0, 0.5);
+  background: #fffbe6;
+}
+
+.payment-option-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 50%;
+  background: #35C8B4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.payment-option-icon.muted {
+  background: #eaf7f4;
+}
+
+.payment-option-badge {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 50%;
+  background: #191c1d;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.payment-option.kakao .payment-option-badge {
+  background: #fee500;
+  color: #191c1d;
+}
+
+.payment-option.naver .payment-option-badge {
+  background: #03c75a;
+  color: #fff;
+}
+
+.payment-option strong {
+  display: block;
+  color: #153e36;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 800;
+}
+
+.payment-option small {
+  display: block;
+  margin-top: 2px;
+  color: #6b8b86;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 700;
+}
+
+.payment-cancel {
+  width: 100%;
+  height: 38px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 999px;
+  background: #f4f7f6;
+  color: #6c7a76;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.payment-register-hint {
+  margin-top: 8px;
+  color: #8aa6a0;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 700;
+  text-align: center;
+}

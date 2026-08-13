@@ -1,0 +1,81 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── 언어별 폰트 ── */
+:root,
+[data-lang="ko"] {
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+[data-lang="en"] {
+  font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
+}
+[data-lang="ja"] {
+  font-family: "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ ProN W3",
+               "Hiragino Sans", "Yu Gothic", sans-serif;
+}
+[data-lang="zh"] {
+  font-family: "Microsoft YaHei", "微软雅黑", "PingFang SC", sans-serif;
+}
+
+body {
+  font-family: inherit;
+  background: #efece4;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding: 16px;
+}
+
+#root {
+  width: min(402px, calc(100vw - 32px));
+  height: min(874px, calc(100dvh - 32px));
+  min-height: 680px;
+  background: #C2F2E4;
+  position: relative;
+  overflow: hidden;
+  border: 10px solid #070707;
+  border-radius: 46px;
+  box-shadow:
+    0 28px 80px rgba(15, 23, 42, 0.22),
+    inset 0 0 0 1px rgba(255,255,255,0.16);
+}
+
+/* ── 화면 전환 슬라이드 업 애니메이션 ── */
+@keyframes screenSlideUp {
+  from {
+    transform: translateY(48px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.screen-enter {
+  animation: screenSlideUp 0.32s cubic-bezier(0.4, 0, 0.2, 1) both;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-height: 720px) {
+  body {
+    padding: 0;
+  }
+
+  #root {
+    width: 100vw;
+    height: 100dvh;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+}

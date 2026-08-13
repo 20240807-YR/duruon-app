@@ -1,0 +1,149 @@
+.review-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(160deg, #edfaf6 0%, #f5fcf8 100%);
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* ── 카드 ── */
+.review-card {
+  width: 100%;
+  max-width: 360px;
+  background: #fff;
+  border-radius: 28px;
+  padding: 36px 28px 28px;
+  box-shadow: 0 8px 36px rgba(53, 200, 180, 0.13);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* 아이콘 원형 */
+.review-icon-wrap {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #edfaf6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.review-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1a3d36;
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
+}
+
+.review-sub {
+  font-size: 13px;
+  color: #8ab9b2;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* 목적지 뱃지 */
+.review-dest-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #f0faf7;
+  border: 1px solid #c8ede6;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #35C8B4;
+  margin-bottom: 24px;
+}
+
+/* ── 별점 ── */
+.star-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  line-height: 0;
+  transition: transform 0.12s ease;
+}
+
+.star-btn:active  { transform: scale(0.88); }
+.star-btn:hover   { transform: scale(1.1);  }
+
+/* ── 코멘트 ── */
+.review-comment {
+  width: 100%;
+  border: 1.5px solid #d4ede8;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1a3d36;
+  resize: none;
+  outline: none;
+  margin-bottom: 20px;
+  line-height: 1.6;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.review-comment:focus         { border-color: #35C8B4; }
+.review-comment::placeholder  { color: #b0ccc8; }
+
+/* ── 제출 버튼 ── */
+.review-submit {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #35C8B4 0%, #A4CF4A 100%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(53, 200, 180, 0.35);
+  letter-spacing: -0.3px;
+  margin-bottom: 12px;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.review-submit:active:not(.disabled) {
+  transform: scale(0.98);
+  box-shadow: 0 3px 10px rgba(53, 200, 180, 0.3);
+}
+
+.review-submit.disabled {
+  background: #d4e8e4;
+  box-shadow: none;
+  color: #a8c8c2;
+  cursor: default;
+}
+
+/* ── 건너뛰기 ── */
+.review-skip {
+  background: none;
+  border: none;
+  color: #a0bbb6;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 8px 16px;
+  transition: color 0.15s;
+}
+
+.review-skip:hover { color: #7aada8; }
