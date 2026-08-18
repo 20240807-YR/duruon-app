@@ -8,6 +8,21 @@ const DEMO_USER = {
   loginId: 'user',
 };
 
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
+const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+const toAuthEmail = (value) => value.includes('@') ? value.trim() : `${value.trim()}@duruon.app`;
+
+async function supabaseAuth(path, body) {
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/${path}`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error((await response.json()).msg || '인증에 실패했습니다.');
+  return response.json();
+}
+
 function getRegisteredUsers() {
   try {
     return JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
@@ -22,9 +37,12 @@ function persistUser(user) {
 }
 
 export async function signInUser(loginId, password) {
-  // Later replace this body with Supabase Auth:
-  // const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  // then load the public user profile table by data.user.id.
+  if (hasSupabaseConfig) {
+    const data = await supabaseAuth('token?grant_type=password', { email: toAuthEmail(loginId), password });
+    const user = { id: data.user.id, name: data.user.user_metadata?.name || loginId.trim(), phone: data.user.user_metadata?.phone || '', loginId: data.user.email, accessToken: data.access_token };
+    persistUser(user);
+    return user;
+  }
   if (loginId.trim() === 'user' && password === 'demo1234') {
     persistUser(DEMO_USER);
     return DEMO_USER;
@@ -51,6 +69,14 @@ export async function signUpUser({ loginId, password, name, phone }) {
   const trimmedLoginId = loginId.trim();
   if (!trimmedLoginId || !password || !name.trim() || !phone.trim()) {
     throw new Error('모든 항목을 입력해 주세요.');
+  }
+
+  if (hasSupabaseConfig) {
+    const data = await supabaseAuth('signup', { email: toAuthEmail(trimmedLoginId), password, data: { name: name.trim(), phone: phone.trim() } });
+    if (!data.user) throw new Error('가입 확인 메일을 확인해 주세요.');
+    const user = { id: data.user.id, name: name.trim(), phone: phone.trim(), loginId: trimmedLoginId, accessToken: data.access_token };
+    persistUser(user);
+    return user;
   }
 
   const users = getRegisteredUsers();

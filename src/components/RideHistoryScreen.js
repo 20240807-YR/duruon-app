@@ -3,6 +3,7 @@ import DuruLogo from './DuruLogo';
 import AppNav from './AppNav';
 import { Icon } from './Icon';
 import './RideHistoryScreen.css';
+import { updateReservationStatus } from '../services/reservations';
 
 const PAST_TRIPS = [
   { id: 'seed-1', date: '10.25', time: '09:15', from: '풍기역', to: '소수서원', fare: 2500, payment: '현장 결제' },
@@ -22,7 +23,7 @@ function makePastTrip(trip, fallbackDate) {
   };
 }
 
-export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavigate, onCompleteRide }) {
+export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavigate, onCompleteRide, accessToken }) {
   const [selectedPastTrip, setSelectedPastTrip] = useState(null);
   const [rideStatus, setRideStatus] = useState(bookingInfo ? 'reserved' : 'waiting');
   const [nowMs, setNowMs] = useState(Date.now());
@@ -158,12 +159,18 @@ export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavig
               </div>
               <div className="ride-action-row">
                 {rideStatus === 'reserved' && (
-                  <button type="button" onClick={() => setRideStatus('boarding')}>
+                  <button type="button" onClick={async () => {
+                    setRideStatus('boarding');
+                    await updateReservationStatus(trip.reservationId || trip.id, 'boarding', accessToken);
+                  }}>
                     탑승 시작
                   </button>
                 )}
                 {rideStatus === 'boarding' && (
-                  <button type="button" onClick={() => setRideStatus('completed')}>
+                  <button type="button" onClick={async () => {
+                    setRideStatus('completed');
+                    await updateReservationStatus(trip.reservationId || trip.id, 'completed', accessToken);
+                  }}>
                     하차 완료
                   </button>
                 )}

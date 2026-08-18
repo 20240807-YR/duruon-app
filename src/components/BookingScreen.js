@@ -58,6 +58,14 @@ function getDefaultCustomTime() {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
 
+function toScheduledAt(time) {
+  const [hours, minutes] = time.split(':').map(Number);
+  const value = new Date();
+  value.setHours(hours, minutes, 0, 0);
+  if (value.getTime() < Date.now()) value.setDate(value.getDate() + 1);
+  return value.toISOString();
+}
+
 function findRoute(departureName, destinationName) {
   return internalData.routes.find(
     (r) => r.start_name === departureName && r.end_name === destinationName && r.active === 'Y'
@@ -150,6 +158,7 @@ export default function BookingScreen({ departure, destination: initialDest, onB
       paymentLabel,
       paymentStatus: paymentMethod === 'onsite' ? '현장 결제 예정' : '결제 완료',
       etaMinutes: Number(selectedTime.id) || 10,
+      scheduledAt: toScheduledAt(resolvedTime),
       bookedAt: Date.now(),
     });
   };

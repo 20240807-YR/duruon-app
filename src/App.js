@@ -10,6 +10,7 @@ import RideHistoryScreen from './components/RideHistoryScreen';
 import MyPageScreen from './components/MyPageScreen';
 import LoginScreen from './components/LoginScreen';
 import { getStoredUser, signOutUser } from './services/userAuth';
+import { createReservation, makeReservationPayload } from './services/reservations';
 
 export default function App() {
   const [user, setUser]                   = useState(() => getStoredUser());
@@ -34,7 +35,12 @@ export default function App() {
   };
 
   const goToBooking = (dest) => { setSelectedDest(dest); navigate('booking'); };
-  const goToWaiting = (info) => { setBookingInfo(info);  navigate('ride'); };
+  const goToWaiting = async (info) => {
+    const payload = makeReservationPayload({ ...info, userId: user?.id });
+    const saved = await createReservation(payload, user?.accessToken);
+    setBookingInfo({ ...info, ...saved, bookedAt: saved.created_at || Date.now(), scheduledAt: saved.scheduled_at, arrivalAt: saved.arrival_at, reservationId: saved.id });
+    navigate('ride');
+  };
   const goToReview  = ()     => { navigate('review'); };
   const goHome      = ()     => {
     setSelectedDest(null);
@@ -100,6 +106,7 @@ export default function App() {
             <RideHistoryScreen
               bookingInfo={bookingInfo}
               pastTrips={pastTrips}
+              accessToken={user?.accessToken}
               onNavigate={navigate}
               onCompleteRide={completeRideAndGoHome}
             />
