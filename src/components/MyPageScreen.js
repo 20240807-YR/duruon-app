@@ -124,6 +124,15 @@ export default function MyPageScreen({ user, onLogout, onNavigate }) {
         <button className="logout-btn" type="button" onClick={onLogout}>
           로그아웃
         </button>
+
+        
+          href="https://yeongju-drt-admin.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ display: 'block', textAlign: 'center', marginTop: '16px', fontSize: '12px', color: '#999', textDecoration: 'underline' }}
+        >
+          지자체 관리자용 데모 보기
+        </a>
       </main>
 
       <AppNav active="mypage" onNavigate={onNavigate} />
