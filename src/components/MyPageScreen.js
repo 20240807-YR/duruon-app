@@ -6,10 +6,10 @@ import { getPaymentMethods, registerPaymentMethod, removePaymentMethod } from '.
 import './MyPageScreen.css';
 
 const MENU_ITEMS = [
-  { title: '결제수단 관리', desc: '카드 및 간편결제 등록', icon: 'card', featured: true, detail: '등록된 결제수단이 없습니다. 현장 결제와 간편결제 등록을 지원할 예정입니다.' },
-  { title: '이용가이드', desc: 'DRT 서비스 이용 방법', icon: 'book', detail: '출발역과 관광지를 선택한 뒤 탑승 시간과 인원을 정하면 예약할 수 있습니다.' },
-  { title: '공지사항', desc: '새로운 소식 및 업데이트', icon: 'megaphone', detail: '영주 관광 DRT 시범 운영 기간에는 주요 관광지 노선을 우선 운행합니다.' },
-  { title: '고객센터', desc: '문의하기 및 자주 묻는 질문', icon: 'headset', detail: '운영 문의는 영주시 관광 DRT 고객센터 054-636-XXXX로 접수됩니다.' },
+  { title: '결제수단 관리', desc: '카드 및 간편결제 등록', icon: 'card', featured: true, detail: '아직 등록된 결제수단이 없어요. 현장 결제와 간편결제 등록을 지원할 예정이예요.' },
+  { title: '이용가이드', desc: 'DRT 서비스 이용 방법', icon: 'book', detail: '출발역과 관광지를 고른 뒤, 시간과 인원을 정해 예약해 보세요.' },
+  { title: '공지사항', desc: '새로운 소식 및 업데이트', icon: 'megaphone', detail: '영주 관광 DRT 시범 운영 동안에는 주요 관광지 노선을 먼저 운행해요.' },
+  { title: '고객센터', desc: '문의하기 및 자주 묻는 질문', icon: 'headset', detail: '궁금한 점은 두루온 고객센터(XXX-XXX-XXXX)로 언제든 물어보세요.' },
 ];
 
 export default function MyPageScreen({ user, onLogout, onNavigate }) {
