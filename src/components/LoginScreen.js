@@ -46,8 +46,8 @@ export default function LoginScreen({ onLogin }) {
           <h1>{mode === 'login' ? '로그인' : '회원가입'}</h1>
           <p>
             {mode === 'login'
-              ? '두루온 계정으로 예약과 탑승 내역을 확인하세요.'
-              : '임시 계정을 만들고 바로 두루온을 이용하세요.'}
+              ? '두루온 계정으로 예약과 탑승 내역을 확인할 수 있어요.'
+              : '임시 계정으로 바로 두루온을 시작해 보세요.'}
           </p>
         </div>
 
@@ -148,7 +148,7 @@ export default function LoginScreen({ onLogin }) {
 
         <p className="demo-account">
           {mode === 'login'
-            ? '임시 계정: user / demo1234 · 로그인 후 새로고침하면 세션이 유지됩니다.'
+            ? '임시 계정: user / demo1234 · 로그인한 상태로 새로고침해도 연결이 그대로 유지돼요.'
             : 'MVP 임시 회원가입입니다. 실제 배포 전 Supabase Auth로 교체합니다.'}
         </p>
       </form>
