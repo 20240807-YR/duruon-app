@@ -6,7 +6,7 @@ import { signInDemoUser, signInUser, signUpUser } from '../services/userAuth';
 import './LoginScreen.css';
 
 function getRememberedLoginId() {
-  try { return localStorage.getItem('duruon-login-id') || 'user'; } catch { return 'user'; }
+  try { return localStorage.getItem('duruon-login-id') || 'openapi'; } catch { return 'openapi'; }
 }
 
 function rememberLoginId(value) {
@@ -20,7 +20,7 @@ function forgetLoginId() {
 export default function LoginScreen({ onLogin }) {
   const [mode, setMode] = useState('login');
   const [loginId, setLoginId] = useState(getRememberedLoginId);
-  const [password, setPassword] = useState('demo1234');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [remember, setRemember] = useState(false);
