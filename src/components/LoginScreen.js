@@ -26,12 +26,14 @@ export default function LoginScreen({ onLogin }) {
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showDemoFallback, setShowDemoFallback] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
+    setNotice('');
     setSubmitting(true);
 
     try {
@@ -153,7 +155,7 @@ export default function LoginScreen({ onLogin }) {
             </label>
             <button
               type="button"
-              onClick={() => setError('비밀번호 찾기는 고객센터를 통해 진행해 주세요.')}
+              onClick={() => { setError(''); setNotice('비밀번호 찾기는 고객센터를 통해 진행해 주세요.'); }}
             >
               비밀번호 찾기
             </button>
@@ -161,6 +163,7 @@ export default function LoginScreen({ onLogin }) {
         )}
 
         {error && <p className="login-error">{error}</p>}
+        {notice && <p className="login-notice">{notice}</p>}
 
         <button className="login-submit" type="submit" disabled={submitting}>
           {submitting ? '처리 중...' : mode === 'login' ? '로그인' : '가입하고 시작하기'}
@@ -176,23 +179,25 @@ export default function LoginScreen({ onLogin }) {
           type="button"
           className="login-mode-toggle"
           onClick={() => {
-            setMode((value) => value === 'login' ? 'signup' : 'login');
+            const next = mode === 'login' ? 'signup' : 'login';
+            setMode(next);
+            // 회원가입에는 기억된 아이디를 채우지 않는다 (중복 아이디 오류 방지)
+            setLoginId(next === 'signup' ? '' : getRememberedLoginId());
             setError('');
+            setNotice('');
             setShowDemoFallback(false);
           }}
         >
           {mode === 'login' ? '계정이 없나요? 회원가입' : '이미 계정이 있나요? 로그인'}
         </button>
 
-        <p className="demo-account">
-          {mode === 'login'
-            ? hasSupabaseConfig
-              ? 'Supabase Auth 계정으로 로그인합니다. 테스트 계정은 운영 환경에서 별도로 관리하세요.'
-              : '임시 계정: user / demo1234 · 로그인 후 새로고침하면 세션이 유지됩니다.'
-            : hasSupabaseConfig
-              ? 'Supabase Auth로 계정을 생성합니다. 이메일 확인이 필요한 경우 안내에 따라 로그인하세요.'
+        {!hasSupabaseConfig && (
+          <p className="demo-account">
+            {mode === 'login'
+              ? '임시 계정: user / demo1234 · 로그인 후 새로고침하면 세션이 유지됩니다.'
               : 'MVP 임시 회원가입입니다. 실제 배포 전 Supabase Auth로 교체합니다.'}
-        </p>
+          </p>
+        )}
       </form>
     </div>
   );
