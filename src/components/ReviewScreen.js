@@ -3,24 +3,37 @@ import { useLang } from '../contexts/LanguageContext';
 import { Icon } from './Icon';
 import './ReviewScreen.css';
 
-export default function ReviewScreen({ bookingInfo, onDone }) {
+export default function ReviewScreen({ bookingInfo, userId, onDone }) {
   const { t } = useLang();
   const [rating,  setRating]  = useState(0);
   const [hover,   setHover]   = useState(0);
   const [comment, setComment] = useState('');
+  const [submitError, setSubmitError] = useState('');
 
   const handleSubmit = () => {
+    if (!rating) return;
     const review = {
+      id: bookingInfo?.reservationId || bookingInfo?.id || `review-${Date.now()}`,
       rating,
       comment:     comment.trim(),
-      destination: bookingInfo?.destination?.name,
+      destination: typeof bookingInfo?.destination === 'string'
+        ? bookingInfo.destination
+        : bookingInfo?.destination?.name,
       departure:   bookingInfo?.departure,
       passengers:  bookingInfo?.passengers,
       total:       bookingInfo?.total,
       timestamp:   new Date().toISOString(),
     };
-    console.log('[DRT Review submitted]', review);
-    onDone();
+    try {
+      const key = `duruon-reviews:${userId || 'guest'}`;
+      const stored = JSON.parse(localStorage.getItem(key) || '[]');
+      const reviews = Array.isArray(stored) ? stored : [];
+      const nextReviews = [...reviews.filter((item) => item.id !== review.id), review];
+      localStorage.setItem(key, JSON.stringify(nextReviews));
+      onDone();
+    } catch {
+      setSubmitError('리뷰를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    }
   };
 
   const display = hover || rating;
@@ -82,6 +95,7 @@ export default function ReviewScreen({ bookingInfo, onDone }) {
         >
           {t.submitReview}
         </button>
+        {submitError && <p className="review-error" role="alert">{submitError}</p>}
 
         <button className="review-skip" onClick={onDone}>
           {t.skipReview}

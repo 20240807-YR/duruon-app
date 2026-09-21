@@ -12,27 +12,44 @@ const PAST_TRIPS = [
 
 function makePastTrip(trip, fallbackDate) {
   const dateMatch = fallbackDate.match(/(\d+)월\s+(\d+)일/);
+  const destination = typeof trip.destination === 'string'
+    ? trip.destination
+    : trip.destination?.name || '목적지';
   return {
-    id: `completed-${Date.now()}`,
+    id: `completed-${trip.reservationId || trip.id || Date.now()}`,
     date: dateMatch ? `${dateMatch[1]}.${dateMatch[2]}` : fallbackDate,
     time: trip.time || trip.timeLabel || '방금',
     from: trip.departure || '영주역',
-    to: trip.destination?.name || '목적지',
+    to: destination,
     fare: trip.total ?? 2500,
     payment: trip.paymentLabel || '결제',
   };
 }
 
-export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavigate, onCompleteRide, accessToken }) {
+function toRideStatus(status) {
+  if (status === 'boarding') return 'boarding';
+  if (status === 'completed') return 'completed';
+  if (status === 'cancelled') return 'cancelled';
+  return 'reserved';
+}
+
+export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavigate, onCompleteRide, onCancel, accessToken, refreshToken, onStatusChange }) {
   const [selectedPastTrip, setSelectedPastTrip] = useState(null);
-  const [rideStatus, setRideStatus] = useState(bookingInfo ? 'reserved' : 'waiting');
+  const [rideStatus, setRideStatus] = useState(() => bookingInfo ? toRideStatus(bookingInfo.status) : 'waiting');
   const [nowMs, setNowMs] = useState(Date.now());
+  const [actionPending, setActionPending] = useState(false);
+  const [actionError, setActionError] = useState('');
   const trip = bookingInfo;
   const hasRealBooking = Boolean(bookingInfo);
-  const destinationName = trip?.destination?.name ?? '무섬마을';
+  const destinationName = typeof trip?.destination === 'string'
+    ? trip.destination
+    : trip?.destination?.name ?? '무섬마을';
   const passengerCount = trip?.passengers ?? trip?.adults ?? 1;
   const now = new Date();
-  const dateLabel = `${now.getMonth() + 1}월 ${now.getDate()}일 (${['일', '월', '화', '수', '목', '금', '토'][now.getDay()]})`;
+  const scheduledDateValue = trip?.scheduledAt || trip?.scheduled_at;
+  const scheduledDate = scheduledDateValue ? new Date(scheduledDateValue) : now;
+  const displayDate = Number.isNaN(scheduledDate.getTime()) ? now : scheduledDate;
+  const dateLabel = `${displayDate.getMonth() + 1}월 ${displayDate.getDate()}일 (${['일', '월', '화', '수', '목', '금', '토'][displayDate.getDay()]})`;
   const timeLabel = trip?.time || trip?.timeLabel || '14:30';
   const plateNo = trip?.vehiclePlate || '경북 72바 1234';
   const totalFare = trip?.total ?? passengerCount * 2500;
@@ -43,16 +60,18 @@ export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavig
     reserved: '예약 완료',
     boarding: '탑승 중',
     completed: '이용 완료',
+    cancelled: '예약 취소',
     waiting: '탑승 대기',
   };
   const visiblePastTrips = [...pastTrips, ...PAST_TRIPS];
   const etaTotalSeconds = useMemo(() => {
     if (!trip) return 0;
+    const scheduledMs = scheduledDateValue ? new Date(scheduledDateValue).getTime() : NaN;
+    if (Number.isFinite(scheduledMs)) return Math.max(0, Math.floor((scheduledMs - nowMs) / 1000));
     const etaMinutes = Number(trip.etaMinutes ?? parseInt(trip.timeLabel, 10) ?? 10);
-    const bookedAt = Number(trip.bookedAt ?? Date.now());
-    const elapsedSeconds = Math.max(0, Math.floor((nowMs - bookedAt) / 1000));
-    return Math.max(0, etaMinutes * 60 - elapsedSeconds);
-  }, [trip, nowMs]);
+    const bookedAt = Number(trip.bookedAt ?? nowMs);
+    return Math.max(0, etaMinutes * 60 - Math.floor((nowMs - bookedAt) / 1000));
+  }, [trip, nowMs, scheduledDateValue]);
   const etaMinutesLeft = Math.floor(etaTotalSeconds / 60);
   const etaSecondsLeft = etaTotalSeconds % 60;
   const etaText = etaTotalSeconds > 0
@@ -64,6 +83,39 @@ export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavig
     const timer = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(timer);
   }, [hasRealBooking, rideStatus]);
+
+  useEffect(() => {
+    setRideStatus(bookingInfo ? toRideStatus(bookingInfo.status) : 'waiting');
+    setActionError('');
+  }, [bookingInfo?.reservationId, bookingInfo?.status]);
+
+  const changeRideStatus = async (nextStatus) => {
+    if (actionPending) return;
+    setActionPending(true);
+    setActionError('');
+    try {
+      await updateReservationStatus(trip.reservationId || trip.id, nextStatus, accessToken, refreshToken);
+      setRideStatus(nextStatus);
+      onStatusChange?.(nextStatus);
+    } catch (error) {
+      setActionError(error?.message || '탑승 상태를 저장하지 못했습니다. 다시 시도해 주세요.');
+    } finally {
+      setActionPending(false);
+    }
+  };
+
+  const cancelRide = async () => {
+    if (actionPending || !onCancel) return;
+    setActionPending(true);
+    setActionError('');
+    try {
+      await onCancel();
+    } catch (error) {
+      setActionError(error?.message || '예약 취소를 저장하지 못했습니다. 다시 시도해 주세요.');
+    } finally {
+      setActionPending(false);
+    }
+  };
 
   return (
     <div className="ride-screen">
@@ -99,6 +151,8 @@ export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavig
                     ? etaText
                     : rideStatus === 'boarding'
                       ? '탑승 중'
+                      : rideStatus === 'cancelled'
+                        ? '예약이 취소되었습니다.'
                       : '이용 완료'}
                 </strong>
                 {rideStatus === 'reserved' && <small>실시간으로 남은 시간이 줄어듭니다.</small>}
@@ -152,6 +206,8 @@ export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavig
                     ? '탑승이 완료되었습니다.'
                     : rideStatus === 'boarding'
                       ? '차량 탑승이 시작되었습니다.'
+                      : rideStatus === 'cancelled'
+                        ? '예약이 취소되었습니다.'
                       : '예약이 확정되었습니다.'}
                 </strong>
                 <span>{trip.timeLabel || timeLabel} 탑승 · 총 {totalFare.toLocaleString()}원</span>
@@ -159,19 +215,20 @@ export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavig
               </div>
               <div className="ride-action-row">
                 {rideStatus === 'reserved' && (
-                  <button type="button" onClick={async () => {
-                    setRideStatus('boarding');
-                    await updateReservationStatus(trip.reservationId || trip.id, 'boarding', accessToken);
-                  }}>
-                    탑승 시작
-                  </button>
+                  <>
+                    <button type="button" disabled={actionPending} onClick={() => changeRideStatus('boarding')}>
+                      {actionPending ? '처리 중...' : '탑승 시작'}
+                    </button>
+                    {onCancel && (
+                      <button type="button" className="secondary" disabled={actionPending} onClick={cancelRide}>
+                        예약 취소
+                      </button>
+                    )}
+                  </>
                 )}
                 {rideStatus === 'boarding' && (
-                  <button type="button" onClick={async () => {
-                    setRideStatus('completed');
-                    await updateReservationStatus(trip.reservationId || trip.id, 'completed', accessToken);
-                  }}>
-                    하차 완료
+                  <button type="button" disabled={actionPending} onClick={() => changeRideStatus('completed')}>
+                    {actionPending ? '처리 중...' : '하차 완료'}
                   </button>
                 )}
                 {rideStatus === 'completed' && (
@@ -179,7 +236,13 @@ export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavig
                     홈으로 가기
                   </button>
                 )}
+                {rideStatus === 'cancelled' && (
+                  <button type="button" onClick={() => onNavigate?.('home')}>
+                    홈으로 가기
+                  </button>
+                )}
               </div>
+              {actionError && <p className="ride-action-error" role="alert">{actionError}</p>}
             </article>
           ) : (
             <article className="empty-upcoming-card">

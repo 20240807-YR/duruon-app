@@ -413,10 +413,12 @@
 
 .payment-sheet {
   width: 100%;
+  max-height: calc(100% - 16px);
   border-radius: 24px;
   background: #fff;
   padding: 12px 16px 16px;
   box-shadow: 0 -18px 50px rgba(17, 39, 35, 0.22);
+  overflow-y: auto;
 }
 
 .payment-sheet-handle {
@@ -444,6 +446,18 @@
   text-align: center;
 }
 
+.payment-error {
+  margin: 0 0 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #fff2f0;
+  color: #b42318;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
 .payment-option {
   width: 100%;
   min-height: 66px;
@@ -457,6 +471,12 @@
   font-family: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.payment-option:disabled,
+.payment-cancel:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .payment-option + .payment-option {

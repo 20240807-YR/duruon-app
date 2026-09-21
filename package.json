@@ -11,7 +11,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "node scripts/build.mjs",
     "fetch:coords": "node scripts/fetch-coords.mjs"
   },
   "browserslist": {

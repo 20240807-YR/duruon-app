@@ -1,11 +1,15 @@
 .review-screen {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
   background: linear-gradient(160deg, #edfaf6 0%, #f5fcf8 100%);
   align-items: center;
   justify-content: center;
   padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ── 카드 ── */
@@ -131,6 +135,14 @@
   box-shadow: none;
   color: #a8c8c2;
   cursor: default;
+}
+
+.review-error {
+  width: 100%;
+  margin: -2px 0 8px;
+  color: #b42318;
+  font-size: 12px;
+  line-height: 18px;
 }
 
 /* ── 건너뛰기 ── */

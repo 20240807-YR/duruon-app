@@ -1,3 +1,5 @@
+import { hasSupabaseConfig, SUPABASE_ANON_KEY, SUPABASE_URL } from '../config/env';
+
 const STORAGE_KEY = 'duruon-user-session';
 const USERS_KEY = 'duruon-users';
 
@@ -8,48 +10,93 @@ const DEMO_USER = {
   loginId: 'user',
 };
 
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
-const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
-const toAuthEmail = (value) => value.includes('@') ? value.trim() : `${value.trim()}@duruon.app`;
+const AUTH_TIMEOUT_MS = 8000;
+const toAuthEmail = (value = '') => {
+  const normalized = String(value).trim();
+  return normalized.includes('@') ? normalized : `${normalized}@duruon.app`;
+};
 
 async function supabaseAuth(path, body) {
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/${path}`, {
-    method: 'POST',
-    headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!response.ok) throw new Error((await response.json()).msg || '인증에 실패했습니다.');
-  return response.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/${path}`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const bodyText = await response.text();
+      try {
+        const bodyJson = JSON.parse(bodyText);
+        throw new Error(bodyJson.msg || bodyJson.message || bodyJson.error_description || '인증에 실패했습니다.');
+      } catch (error) {
+        if (error instanceof Error && error.message !== 'Unexpected end of JSON input') throw error;
+        throw new Error('인증에 실패했습니다.');
+      }
+    }
+    return response.json();
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('인증 서버 응답이 없습니다. 잠시 후 다시 시도해 주세요.');
+    if (error instanceof TypeError || ['Failed to fetch', 'NetworkError', 'Load failed'].includes(error?.message)) {
+      throw new Error('인증 서버에 연결할 수 없습니다. 네트워크 상태를 확인해 주세요.');
+    }
+    if (error?.message) throw error;
+    throw new Error('인증 서버에 연결할 수 없습니다. 네트워크 상태를 확인해 주세요.');
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function getRegisteredUsers() {
   try {
     return JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
   } catch {
-    localStorage.removeItem(USERS_KEY);
+    try { localStorage.removeItem(USERS_KEY); } catch { /* storage is unavailable */ }
     return [];
   }
 }
 
 function persistUser(user) {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+  } catch {
+    // Keep the in-memory session working even when private-mode storage is blocked.
+  }
+}
+
+function clearStoredUser() {
+  try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* storage is unavailable */ }
+}
+
+function sessionFromAuthData(data, fallback = {}) {
+  return {
+    ...fallback,
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    expiresAt: data.expires_in ? Date.now() + data.expires_in * 1000 : undefined,
+  };
 }
 
 export async function signInUser(loginId, password) {
+  const trimmedLoginId = String(loginId ?? '').trim();
+  if (!trimmedLoginId || !password) throw new Error('아이디와 비밀번호를 입력해 주세요.');
+
   if (hasSupabaseConfig) {
-    const data = await supabaseAuth('token?grant_type=password', { email: toAuthEmail(loginId), password });
-    const user = { id: data.user.id, name: data.user.user_metadata?.name || loginId.trim(), phone: data.user.user_metadata?.phone || '', loginId: data.user.email, accessToken: data.access_token };
+    const data = await supabaseAuth('token?grant_type=password', { email: toAuthEmail(trimmedLoginId), password });
+    if (!data?.user?.id || !data?.access_token) throw new Error('로그인 결과가 올바르지 않습니다. 다시 시도해 주세요.');
+    const user = sessionFromAuthData(data, { id: data.user.id, name: data.user.user_metadata?.name || trimmedLoginId, phone: data.user.user_metadata?.phone || '', loginId: data.user.email });
     persistUser(user);
     return user;
   }
-  if (loginId.trim() === 'user' && password === 'demo1234') {
+  if (trimmedLoginId === 'user' && password === 'demo1234') {
     persistUser(DEMO_USER);
     return DEMO_USER;
   }
 
   const registered = getRegisteredUsers().find(
-    (user) => user.loginId === loginId.trim() && user.password === password
+    (user) => user.loginId === trimmedLoginId && user.password === password
   );
   if (registered) {
     const user = {
@@ -65,16 +112,25 @@ export async function signInUser(loginId, password) {
   throw new Error('아이디 또는 비밀번호를 확인해 주세요.');
 }
 
-export async function signUpUser({ loginId, password, name, phone }) {
-  const trimmedLoginId = loginId.trim();
-  if (!trimmedLoginId || !password || !name.trim() || !phone.trim()) {
+// Supabase가 끊긴 localhost에서만 명시적으로 선택할 수 있는 테스트 세션.
+export function signInDemoUser() {
+  const user = { ...DEMO_USER, isDemo: true };
+  persistUser(user);
+  return user;
+}
+
+export async function signUpUser({ loginId, password, name, phone } = {}) {
+  const trimmedLoginId = String(loginId ?? '').trim();
+  const trimmedName = String(name ?? '').trim();
+  const trimmedPhone = String(phone ?? '').trim();
+  if (!trimmedLoginId || !password || !trimmedName || !trimmedPhone) {
     throw new Error('모든 항목을 입력해 주세요.');
   }
 
   if (hasSupabaseConfig) {
-    const data = await supabaseAuth('signup', { email: toAuthEmail(trimmedLoginId), password, data: { name: name.trim(), phone: phone.trim() } });
-    if (!data.user) throw new Error('가입 확인 메일을 확인해 주세요.');
-    const user = { id: data.user.id, name: name.trim(), phone: phone.trim(), loginId: trimmedLoginId, accessToken: data.access_token };
+    const data = await supabaseAuth('signup', { email: toAuthEmail(trimmedLoginId), password, data: { name: trimmedName, phone: trimmedPhone } });
+    if (!data?.user || !data?.access_token) throw new Error('가입 확인 메일을 확인한 뒤 로그인해 주세요.');
+    const user = sessionFromAuthData(data, { id: data.user.id, name: trimmedName, phone: trimmedPhone, loginId: trimmedLoginId });
     persistUser(user);
     return user;
   }
@@ -88,10 +144,14 @@ export async function signUpUser({ loginId, password, name, phone }) {
     id: `user-${Date.now()}`,
     loginId: trimmedLoginId,
     password,
-    name: name.trim(),
-    phone: phone.trim(),
+    name: trimmedName,
+    phone: trimmedPhone,
   };
-  localStorage.setItem(USERS_KEY, JSON.stringify([...users, record]));
+  try {
+    localStorage.setItem(USERS_KEY, JSON.stringify([...users, record]));
+  } catch {
+    throw new Error('브라우저 저장소를 사용할 수 없어 회원가입을 완료하지 못했습니다.');
+  }
 
   const user = {
     id: record.id,
@@ -104,17 +164,27 @@ export async function signUpUser({ loginId, password, name, phone }) {
 }
 
 export function getStoredUser() {
-  const raw = sessionStorage.getItem(STORAGE_KEY);
+  let raw;
+  try {
+    raw = sessionStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw);
+    const user = JSON.parse(raw);
+    if (!user || typeof user.id !== 'string' || !user.id) {
+      clearStoredUser();
+      return null;
+    }
+    return user;
   } catch {
-    sessionStorage.removeItem(STORAGE_KEY);
+    clearStoredUser();
     return null;
   }
 }
 
 export function signOutUser() {
-  sessionStorage.removeItem(STORAGE_KEY);
+  clearStoredUser();
 }

@@ -164,6 +164,20 @@
   cursor: default;
 }
 
+.demo-fallback-btn {
+  width: 100%;
+  margin-top: 10px;
+  height: 42px;
+  border: 1px solid #c9ddd8;
+  border-radius: 999px;
+  background: #f6fbf9;
+  color: #4f756d;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .login-mode-toggle {
   width: 100%;
   margin-top: 12px;

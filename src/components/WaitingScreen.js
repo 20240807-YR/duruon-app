@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -32,45 +32,81 @@ function MapFitBounds({ bounds }) {
 }
 
 function pickVehicle() {
-  return internalData.vehicles.find((v) => v.status === '대기') ?? internalData.vehicles[0];
+  return internalData.vehicles.find((v) => v.status === '대기')
+    ?? internalData.vehicles[0]
+    ?? { plate_no: '배정 중', driver_name: '배정 중' };
 }
 
-export default function WaitingScreen({ bookingInfo, onBack, onArrived }) {
+export default function WaitingScreen({ bookingInfo, onBack, onCancel, onArrived }) {
   const { t } = useLang();
-  const { departure, destination } = bookingInfo;
+  const departure = bookingInfo?.departure || '영주역';
+  const destination = typeof bookingInfo?.destination === 'string'
+    ? { name: bookingInfo.destination }
+    : bookingInfo?.destination || { name: '목적지' };
 
   const depCoords  = getCoords(departure);
-  const destCoords = destination.lat
+  const destCoords = Number.isFinite(Number(destination.lat)) && Number.isFinite(Number(destination.lng))
     ? { lat: destination.lat, lng: destination.lng }
     : depCoords;
-  const initialSeconds = Math.max(3, Number(bookingInfo.estimatedMinutes ?? 8)) * 60;
+  const scheduledAtMs = useMemo(() => {
+    const value = Date.parse(bookingInfo?.scheduledAt || bookingInfo?.scheduled_at || '');
+    return Number.isFinite(value) ? value : null;
+  }, [bookingInfo?.scheduledAt, bookingInfo?.scheduled_at]);
+  const estimatedMinutes = Number(bookingInfo?.estimatedMinutes ?? 8);
+  const fallbackSeconds = (Number.isFinite(estimatedMinutes) ? Math.max(3, estimatedMinutes) : 8) * 60;
+  const initialSeconds = useMemo(() => (
+    scheduledAtMs === null
+      ? fallbackSeconds
+      : Math.max(0, Math.ceil((scheduledAtMs - Date.now()) / 1000))
+  ), [fallbackSeconds, scheduledAtMs]);
+  const totalSeconds = Math.max(1, initialSeconds);
   const vehicle = pickVehicle();
 
   const [seconds,    setSeconds]    = useState(initialSeconds);
-  const [arrived,    setArrived]    = useState(false);
+  const [arrived,    setArrived]    = useState(initialSeconds <= 0);
   const [vehiclePos, setVehiclePos] = useState([depCoords.lat, depCoords.lng]);
+  const [cancelPending, setCancelPending] = useState(false);
+  const [cancelError, setCancelError] = useState('');
   const tickRef = useRef(initialSeconds);
+
+  const handleCancel = async () => {
+    if (cancelPending || !onCancel) return;
+    setCancelPending(true);
+    setCancelError('');
+    try {
+      await onCancel();
+    } catch (error) {
+      setCancelError(error?.message || '예약 취소를 저장하지 못했습니다. 다시 시도해 주세요.');
+    } finally {
+      setCancelPending(false);
+    }
+  };
 
   // 카운트다운 + 차량 이동
   useEffect(() => {
-    const id = setInterval(() => {
-      tickRef.current -= 1;
-      const elapsed  = initialSeconds - tickRef.current;
-      const progress = Math.min(elapsed / initialSeconds, 1);
+    if (arrived) return undefined;
 
-      setSeconds(tickRef.current);
+    const tick = () => {
+      const remaining = scheduledAtMs === null
+        ? Math.max(0, tickRef.current - 1)
+        : Math.max(0, Math.ceil((scheduledAtMs - Date.now()) / 1000));
+      tickRef.current = remaining;
+      const progress = Math.min((totalSeconds - remaining) / totalSeconds, 1);
+
+      setSeconds(remaining);
       setVehiclePos([
         depCoords.lat + (destCoords.lat - depCoords.lat) * progress,
         depCoords.lng + (destCoords.lng - depCoords.lng) * progress,
       ]);
 
-      if (tickRef.current <= 0) {
+      if (remaining <= 0) {
         clearInterval(id);
         setArrived(true);
       }
-    }, 1000);
+    };
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, []); // mount 시 1회만 실행
+  }, [arrived, depCoords.lat, depCoords.lng, destCoords.lat, destCoords.lng, scheduledAtMs, totalSeconds]);
 
   // 도착 후 2초 대기 → 리뷰 화면으로 전환
   useEffect(() => {
@@ -151,20 +187,16 @@ export default function WaitingScreen({ bookingInfo, onBack, onArrived }) {
         </div>
         <div className="vi-row">
           <span className="vi-label">{t.eta}</span>
-          <span className="vi-value vi-eta">{bookingInfo.time}</span>
+          <span className="vi-value vi-eta">{bookingInfo?.time || bookingInfo?.timeLabel || '--'}</span>
         </div>
       </div>
 
       {/* 취소 버튼 */}
       <div className="cancel-wrap">
-        <button className="cancel-btn" onClick={onBack}>{t.cancelBtn}</button>
-      </div>
-
-      {/* MVP 전용: 리뷰 화면 바로가기 */}
-      <div className="mvp-skip-wrap">
-        <button className="mvp-skip-btn" onClick={onArrived}>
-          리뷰 화면으로 →
+        <button className="cancel-btn" onClick={handleCancel} disabled={cancelPending}>
+          {cancelPending ? '취소 처리 중...' : t.cancelBtn}
         </button>
+        {cancelError && <p className="cancel-error" role="alert">{cancelError}</p>}
       </div>
     </div>
   );

@@ -27,14 +27,20 @@ const ALLOWED_PARAMS = [
   'lclsSystm2',
   'lclsSystm3',
 ];
+const UPSTREAM_TIMEOUT_MS = 8000;
 
 export default async function handler(req, res) {
+  if (req.method && req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ error: 'method not allowed' });
+  }
+
   const { service, operation = 'searchKeyword2' } = req.query;
 
-  if (!ALLOWED_SERVICES.includes(service)) {
+  if (typeof service !== 'string' || !ALLOWED_SERVICES.includes(service)) {
     return res.status(400).json({ error: `invalid service: ${service}` });
   }
-  if (!ALLOWED_OPERATIONS.includes(operation)) {
+  if (typeof operation !== 'string' || !ALLOWED_OPERATIONS.includes(operation)) {
     return res.status(400).json({ error: `invalid operation: ${operation}` });
   }
 
@@ -46,7 +52,11 @@ export default async function handler(req, res) {
   const params = new URLSearchParams();
   for (const name of ALLOWED_PARAMS) {
     const v = req.query[name];
-    if (v !== undefined && v !== '') params.set(name, v);
+    if (v === undefined || v === '') continue;
+    if (typeof v !== 'string') {
+      return res.status(400).json({ error: `invalid parameter: ${name}` });
+    }
+    params.set(name, v);
   }
   params.set('serviceKey', serviceKey);
   params.set('MobileOS', 'ETC');
@@ -55,8 +65,10 @@ export default async function handler(req, res) {
 
   const url = `https://apis.data.go.kr/B551011/${service}/${operation}?${params}`;
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
   try {
-    const upstream = await fetch(url, { headers: { Accept: 'application/json' } });
+    const upstream = await fetch(url, { headers: { Accept: 'application/json' }, signal: controller.signal });
     const text = await upstream.text();
 
     if (!upstream.ok) {
@@ -86,6 +98,11 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
     return res.status(200).json(json);
   } catch (e) {
+    if (e?.name === 'AbortError') {
+      return res.status(504).json({ error: 'TourAPI upstream timeout' });
+    }
     return res.status(502).json({ error: e.message });
+  } finally {
+    clearTimeout(timeout);
   }
 }
