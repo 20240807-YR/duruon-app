@@ -64,8 +64,9 @@ export async function supabaseRequest(path, options = {}) {
   if (!hasSupabaseConfig) throw new Error('Supabase 환경변수가 설정되지 않았습니다.');
   const { accessToken, refreshToken, headers: customHeaders, signal: externalSignal, ...requestOptions } = options;
   const stored = getStoredSession();
-  const currentAccessToken = stored?.accessToken || accessToken;
-  const currentRefreshToken = stored?.refreshToken || refreshToken;
+  // A freshly authenticated request must win over a stale session left in storage.
+  const currentAccessToken = accessToken || stored?.accessToken;
+  const currentRefreshToken = refreshToken || stored?.refreshToken;
   const request = async (token) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
