@@ -32,6 +32,7 @@ const KEYWORDS = {
   buseok: '부석사',
   museom: '무섬마을',
 };
+const REQUEST_TIMEOUT_MS = 8000;
 
 export const SPOT_IDS = ['sosu', 'buseok', 'museom'];
 
@@ -79,9 +80,12 @@ export async function fetchSpotInfo(lang, spotId) {
     lDongSignguCd: L_DONG_SIGNGU_CD,
   });
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     const res = await fetch(`/api/tour?${params}`, {
       headers: { Accept: 'application/json' },
+      signal: controller.signal,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -110,9 +114,12 @@ export async function fetchSpotInfo(lang, spotId) {
     cache[cacheKey] = result;
     return result;
   } catch (e) {
-    console.warn(`[TourAPI] ${lang}/${spotId}:`, e.message);
+    const message = e?.name === 'AbortError' ? 'timeout' : e.message;
+    console.warn(`[TourAPI] ${lang}/${spotId}:`, message);
     // 네트워크/일시 장애는 캐싱하지 않는다 → 다음 시도에 복구 가능
     return null;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

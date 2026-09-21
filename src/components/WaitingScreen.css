@@ -1,9 +1,13 @@
 .waiting-screen {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
   background: #f8faf8;
-  padding-bottom: 40px;
+  padding-bottom: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ── 헤더 ── */
@@ -11,7 +15,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 52px 20px 16px;
+  padding: 12px 20px 12px;
   background: #fff;
   border-bottom: 1px solid #f0f5f3;
 }
@@ -172,22 +176,14 @@
   border-color: #c0dcd8;
 }
 
-/* ── MVP 전용: 리뷰 바로가기 ── */
-.mvp-skip-wrap {
-  padding: 10px 16px 0;
+.cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancel-error {
+  margin: 8px 0 0;
+  color: #b42318;
+  font-size: 12px;
   text-align: center;
 }
-
-.mvp-skip-btn {
-  border: none;
-  background: transparent;
-  font-size: 12px;
-  color: #b0ccc8;
-  cursor: pointer;
-  font-family: inherit;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  padding: 6px 12px;
-}
-
-.mvp-skip-btn:active { color: #35C8B4; }

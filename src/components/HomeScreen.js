@@ -20,7 +20,7 @@ const DESTINATION_IDS = [
     duration:  { '영주역': '약 18분', '풍기역': '약 38분' } },
 ];
 
-export default function HomeScreen({ departure, setDeparture, onSelectDest, onNavigate }) {
+export default function HomeScreen({ departure, setDeparture, bookingInfo, onSelectDest, onNavigate }) {
   const { lang, setLang, t } = useLang();
   const [selected, setSelected]       = useState(null);
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -67,6 +67,10 @@ export default function HomeScreen({ departure, setDeparture, onSelectDest, onNa
   };
 
   const handleCallDRT = () => {
+    if (bookingInfo) {
+      onNavigate?.('ride');
+      return;
+    }
     if (!selected) return;
     onSelectDest({
       ...selected,
@@ -156,11 +160,11 @@ export default function HomeScreen({ departure, setDeparture, onSelectDest, onNa
       {/* DRT 호출 버튼 */}
       <div className="drt-btn-wrap">
         <button
-          className={`drt-btn ${!selected ? 'disabled' : ''}`}
+          className={`drt-btn ${!selected && !bookingInfo ? 'disabled' : ''}`}
           onClick={handleCallDRT}
-          disabled={!selected}
+          disabled={!selected && !bookingInfo}
         >
-          {selected ? t.callDRTTo(getSpotName(selected.id)) : t.callDRT}
+          {bookingInfo ? '내 탑승 확인' : selected ? t.callDRTTo(getSpotName(selected.id)) : t.callDRT}
         </button>
       </div>
 

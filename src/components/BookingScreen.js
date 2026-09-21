@@ -43,8 +43,8 @@ function MapFlyTo({ center, zoom }) {
   return null;
 }
 
-function getRelativeSlots(t) {
-  const now = new Date();
+function getRelativeSlots(t, nowMs = Date.now()) {
+  const now = new Date(nowMs);
   return [5, 10, 15].map((mins) => {
     const d = new Date(now.getTime() + mins * 60000);
     const h = d.getHours().toString().padStart(2, '0');
@@ -58,21 +58,46 @@ function getDefaultCustomTime() {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
 
-function toScheduledAt(time) {
+function parseTodayTime(time, nowMs = Date.now()) {
+  if (typeof time !== 'string') return null;
   const [hours, minutes] = time.split(':').map(Number);
-  const value = new Date();
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+  const value = new Date(nowMs);
   value.setHours(hours, minutes, 0, 0);
-  if (value.getTime() < Date.now()) value.setDate(value.getDate() + 1);
-  return value.toISOString();
+  return value;
 }
 
-function findRoute(departureName, destinationName) {
+function getScheduledAt(slot, customTime) {
+  if (!slot) return null;
+  if (slot.isCustom) {
+    const value = parseTodayTime(customTime);
+    return value && value.getTime() > Date.now() ? value.toISOString() : null;
+  }
+
+  const minutes = Number(slot.id);
+  if (!Number.isFinite(minutes) || minutes <= 0) return null;
+  return new Date(Date.now() + minutes * 60000).toISOString();
+}
+
+const DEPARTURE_STOP_IDS = {
+  영주역: 'yeongju_station',
+  풍기역: 'punggi_station',
+};
+
+function findRoute(departureName, destination) {
+  const destinationId = typeof destination === 'string' ? null : destination?.id;
+  const destinationName = typeof destination === 'string' ? destination : destination?.name;
+  const startStopId = DEPARTURE_STOP_IDS[departureName];
   return internalData.routes.find(
-    (r) => r.start_name === departureName && r.end_name === destinationName && r.active === 'Y'
+    (r) => r.active === 'Y'
+      && (startStopId ? r.start_stop_id === startStopId : r.start_name === departureName)
+      && (destinationId ? r.end_stop_id === destinationId : r.end_name === destinationName)
   );
 }
 
-export default function BookingScreen({ departure, destination: initialDest, onBack, onConfirm, onNavigate }) {
+export default function BookingScreen({ departure, destination: initialDest, userId, onBack, onConfirm, onNavigate }) {
   const { t } = useLang();
 
   const initialStop = initialDest
@@ -85,27 +110,35 @@ export default function BookingScreen({ departure, destination: initialDest, onB
   const [showDropdown, setDropdown] = useState(false);
   const [selectedTimeId, setTimeId] = useState('10');
   const [customTime, setCustomTime] = useState(getDefaultCustomTime);
+  const [slotNowMs, setSlotNowMs] = useState(Date.now());
   const [adults, setAdults]         = useState(1);
   const [validationMsg, setValidationMsg] = useState('');
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 언어 바뀌면 시간 슬롯 라벨 재생성
-  const TIME_SLOTS = useMemo(() => getRelativeSlots(t), [t]);
+  const TIME_SLOTS = useMemo(() => getRelativeSlots(t, slotNowMs), [t, slotNowMs]);
   const selectedTime = TIME_SLOTS.find((slot) => slot.id === selectedTimeId) ?? TIME_SLOTS[1];
   const depCoords  = getCoordsForName(depName) ?? DEPARTURE_COORDS[departure];
 
   useEffect(() => {
-    setPaymentMethods(getPaymentMethods());
-  }, [showPaymentSheet]);
+    setPaymentMethods(getPaymentMethods(userId));
+  }, [showPaymentSheet, userId]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setSlotNowMs(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim();
-    if (!q) return YEONGJU_STOPS;
-    return YEONGJU_STOPS.filter(
+    const availableStops = YEONGJU_STOPS.filter((stop) => stop.name !== depName);
+    if (!q) return availableStops;
+    return availableStops.filter(
       (s) => s.name.includes(q) || s.address.includes(q)
     );
-  }, [query]);
+  }, [depName, query]);
 
   const mapCenter    = selectedStop ? [selectedStop.lat, selectedStop.lng] : [depCoords.lat, depCoords.lng];
   const mapZoom      = selectedStop ? 14 : 12;
@@ -134,33 +167,55 @@ export default function BookingScreen({ departure, destination: initialDest, onB
       setDropdown(true);
       return;
     }
+    if (selectedStop.name === depName) {
+      setValidationMsg('출발지와 다른 목적지를 선택해 주세요.');
+      setStop(null);
+      setQuery('');
+      setDropdown(true);
+      return;
+    }
     if (!selectedTime || (selectedTime.isCustom && !customTime)) {
       setValidationMsg('탑승 시간을 선택해 주세요.');
+      return;
+    }
+    if (selectedTime.isCustom && !getScheduledAt(selectedTime, customTime)) {
+      setValidationMsg('현재 시간보다 늦은 시간을 선택해 주세요.');
       return;
     }
     setValidationMsg('');
     setShowPaymentSheet(true);
   };
 
-  const submitBooking = (paymentMethod, paymentLabel) => {
-    const route = findRoute(depName, selectedStop.name);
-    onConfirm({
-      departure:   depName,
-      destination: selectedStop,
-      routeId:     route?.route_id ?? null,
-      estimatedMinutes: Number(route?.estimated_minutes ?? 8),
-      time:        resolvedTime,
-      timeLabel:   selectedTime.isCustom ? resolvedTime : selectedTime.label,
-      passengers:  adults,
-      adults,
-      total,
-      paymentMethod,
-      paymentLabel,
-      paymentStatus: paymentMethod === 'onsite' ? '현장 결제 예정' : '결제 완료',
-      etaMinutes: Number(selectedTime.id) || 10,
-      scheduledAt: toScheduledAt(resolvedTime),
-      bookedAt: Date.now(),
-    });
+  const submitBooking = async (paymentMethod, paymentLabel) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setValidationMsg('');
+    const route = findRoute(depName, selectedStop);
+    const scheduledAt = getScheduledAt(selectedTime, customTime);
+    try {
+      if (!scheduledAt) throw new Error('탑승 시간을 다시 선택해 주세요.');
+      await onConfirm({
+        departure:   depName,
+        destination: selectedStop,
+        routeId:     route?.route_id ?? null,
+        estimatedMinutes: Number(route?.estimated_minutes ?? 8),
+        time:        resolvedTime,
+        timeLabel:   selectedTime.isCustom ? resolvedTime : selectedTime.label,
+        passengers:  adults,
+        adults,
+        total,
+        paymentMethod,
+        paymentLabel,
+        paymentStatus: paymentMethod === 'onsite' ? '현장 결제 예정' : '결제 완료',
+        etaMinutes: Number(selectedTime.id) || 10,
+        scheduledAt,
+        bookedAt: Date.now(),
+      });
+    } catch (error) {
+      setValidationMsg(error?.message || '예약을 저장하지 못했습니다. 다시 시도해 주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -199,9 +254,10 @@ export default function BookingScreen({ departure, destination: initialDest, onB
             placeholder={t.destPlaceholder}
             value={query}
             onChange={(e) => {
-              setQuery(e.target.value);
+              const nextQuery = e.target.value;
+              setQuery(nextQuery);
               setDropdown(true);
-              if (!e.target.value) setStop(null);
+              if (!nextQuery || nextQuery !== selectedStop?.name) setStop(null);
             }}
             onFocus={() => setDropdown(true)}
           />
@@ -312,6 +368,8 @@ export default function BookingScreen({ departure, destination: initialDest, onB
       <div className="confirm-wrap">
         <button
           className={`confirm-btn ${!canConfirm ? 'disabled' : ''}`}
+          type="button"
+          disabled={!canConfirm || isSubmitting}
           onClick={(event) => {
             event.stopPropagation();
             handleConfirm();
@@ -337,10 +395,12 @@ export default function BookingScreen({ departure, destination: initialDest, onB
             <p className="payment-summary">
               {depName} → {selectedStop.name} · {adults}명 · 총 {total.toLocaleString()}원
             </p>
+            {validationMsg && <p className="payment-error" role="alert">{validationMsg}</p>}
 
             <button
               type="button"
               className="payment-option primary"
+              disabled={isSubmitting}
               onClick={() => submitBooking('easy', '간편 결제')}
             >
               <span className="payment-option-icon">
@@ -356,6 +416,7 @@ export default function BookingScreen({ departure, destination: initialDest, onB
               <button
                 type="button"
                 className={`payment-option ${method.provider === 'kakao' ? 'kakao' : 'naver'}`}
+                disabled={isSubmitting}
                 onClick={() => submitBooking(method.provider, method.label)}
                 key={method.id}
               >
@@ -372,6 +433,7 @@ export default function BookingScreen({ departure, destination: initialDest, onB
             <button
               type="button"
               className="payment-option"
+              disabled={isSubmitting}
               onClick={() => submitBooking('onsite', '현장 결제')}
             >
               <span className="payment-option-icon muted">
@@ -390,6 +452,7 @@ export default function BookingScreen({ departure, destination: initialDest, onB
             <button
               type="button"
               className="payment-cancel"
+              disabled={isSubmitting}
               onClick={() => setShowPaymentSheet(false)}
             >
               취소

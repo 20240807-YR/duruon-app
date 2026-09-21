@@ -1,16 +1,46 @@
 const STORAGE_KEY = 'duruon-payment-methods';
 
-export function getPaymentMethods() {
+function scopedKey(userId) {
+  return `${STORAGE_KEY}:${userId || 'guest'}`;
+}
+
+function readMethods(key) {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
   } catch {
-    localStorage.removeItem(STORAGE_KEY);
-    return [];
+    try { localStorage.removeItem(key); } catch { /* storage is unavailable */ }
+    return null;
   }
 }
 
-export function registerPaymentMethod(provider) {
-  const methods = getPaymentMethods();
+function writeMethods(key, methods) {
+  try { localStorage.setItem(key, JSON.stringify(methods)); } catch { /* storage is unavailable */ }
+  return methods;
+}
+
+export function getPaymentMethods(userId) {
+  const key = scopedKey(userId);
+  const scoped = readMethods(key);
+  if (scoped !== null) return scoped;
+
+  // Migrate the old global list once, so existing demo data is not lost.
+  if (userId) {
+    const legacy = readMethods(STORAGE_KEY);
+    if (legacy !== null) {
+      writeMethods(key, legacy);
+      try { localStorage.removeItem(STORAGE_KEY); } catch { /* storage is unavailable */ }
+      return legacy;
+    }
+  }
+  return [];
+}
+
+export function registerPaymentMethod(provider, userId) {
+  const key = scopedKey(userId);
+  const methods = getPaymentMethods(userId);
   const labels = {
     naver: '네이버페이',
     kakao: '카카오페이',
@@ -27,12 +57,11 @@ export function registerPaymentMethod(provider) {
       registeredAt: new Date().toISOString(),
     },
   ];
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  return next;
+  return writeMethods(key, next);
 }
 
-export function removePaymentMethod(id) {
-  const next = getPaymentMethods().filter((method) => method.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  return next;
+export function removePaymentMethod(id, userId) {
+  const key = scopedKey(userId);
+  const next = getPaymentMethods(userId).filter((method) => method.id !== id);
+  return writeMethods(key, next);
 }

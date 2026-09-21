@@ -1,12 +1,25 @@
 import React, { useState } from 'react';
 import DuruLogo from './DuruLogo';
 import { Icon } from './Icon';
-import { signInUser, signUpUser } from '../services/userAuth';
+import { hasSupabaseConfig } from '../config/env';
+import { signInDemoUser, signInUser, signUpUser } from '../services/userAuth';
 import './LoginScreen.css';
+
+function getRememberedLoginId() {
+  try { return localStorage.getItem('duruon-login-id') || 'user'; } catch { return 'user'; }
+}
+
+function rememberLoginId(value) {
+  try { localStorage.setItem('duruon-login-id', value); } catch { /* storage is unavailable */ }
+}
+
+function forgetLoginId() {
+  try { localStorage.removeItem('duruon-login-id'); } catch { /* storage is unavailable */ }
+}
 
 export default function LoginScreen({ onLogin }) {
   const [mode, setMode] = useState('login');
-  const [loginId, setLoginId] = useState(() => localStorage.getItem('duruon-login-id') || 'user');
+  const [loginId, setLoginId] = useState(getRememberedLoginId);
   const [password, setPassword] = useState('demo1234');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -14,6 +27,7 @@ export default function LoginScreen({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showDemoFallback, setShowDemoFallback] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -24,14 +38,26 @@ export default function LoginScreen({ onLogin }) {
       const user = mode === 'login'
         ? await signInUser(loginId, password)
         : await signUpUser({ loginId, password, name, phone });
-      if (remember || mode === 'signup') localStorage.setItem('duruon-login-id', loginId);
-      if (!remember && mode === 'login') localStorage.removeItem('duruon-login-id');
+      if (remember || mode === 'signup') rememberLoginId(loginId.trim());
+      if (!remember && mode === 'login') forgetLoginId();
       onLogin(user);
     } catch (e) {
-      setError(e.message || '로그인에 실패했습니다.');
+      const message = e.message || '로그인에 실패했습니다.';
+      setError(message);
+      setShowDemoFallback(
+        process.env.NODE_ENV === 'development'
+        && mode === 'login'
+        && hasSupabaseConfig
+        && /연결|응답|네트워크/.test(message),
+      );
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleDemoFallback = () => {
+    setError('개발용 테스트 세션으로 시작했습니다. 실제 예약 데이터는 저장되지 않습니다.');
+    onLogin(signInDemoUser());
   };
 
   return (
@@ -103,7 +129,7 @@ export default function LoginScreen({ onLogin }) {
               onChange={(event) => setPassword(event.target.value)}
               placeholder="비밀번호를 입력하세요"
               type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
+              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
             />
             <button
               className="password-toggle"
@@ -125,7 +151,12 @@ export default function LoginScreen({ onLogin }) {
               />
               아이디 저장
             </label>
-            <button type="button">비밀번호 찾기</button>
+            <button
+              type="button"
+              onClick={() => setError('비밀번호 찾기는 고객센터를 통해 진행해 주세요.')}
+            >
+              비밀번호 찾기
+            </button>
           </div>
         )}
 
@@ -135,12 +166,19 @@ export default function LoginScreen({ onLogin }) {
           {submitting ? '처리 중...' : mode === 'login' ? '로그인' : '가입하고 시작하기'}
         </button>
 
+        {showDemoFallback && (
+          <button className="demo-fallback-btn" type="button" onClick={handleDemoFallback}>
+            연결 없이 테스트하기
+          </button>
+        )}
+
         <button
           type="button"
           className="login-mode-toggle"
           onClick={() => {
             setMode((value) => value === 'login' ? 'signup' : 'login');
             setError('');
+            setShowDemoFallback(false);
           }}
         >
           {mode === 'login' ? '계정이 없나요? 회원가입' : '이미 계정이 있나요? 로그인'}
@@ -148,8 +186,12 @@ export default function LoginScreen({ onLogin }) {
 
         <p className="demo-account">
           {mode === 'login'
-            ? '임시 계정: user / demo1234 · 로그인한 상태로 새로고침해도 연결이 그대로 유지돼요.'
-            : 'MVP 임시 회원가입입니다. 실제 배포 전 Supabase Auth로 교체합니다.'}
+            ? hasSupabaseConfig
+              ? 'Supabase Auth 계정으로 로그인합니다. 테스트 계정은 운영 환경에서 별도로 관리하세요.'
+              : '임시 계정: user / demo1234 · 로그인 후 새로고침하면 세션이 유지됩니다.'
+            : hasSupabaseConfig
+              ? 'Supabase Auth로 계정을 생성합니다. 이메일 확인이 필요한 경우 안내에 따라 로그인하세요.'
+              : 'MVP 임시 회원가입입니다. 실제 배포 전 Supabase Auth로 교체합니다.'}
         </p>
       </form>
     </div>

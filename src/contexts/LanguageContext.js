@@ -5,7 +5,14 @@ const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
   const [lang, setLangState] = useState(
-    () => localStorage.getItem('drt_lang') || 'ko'
+    () => {
+      try {
+        const stored = localStorage.getItem('drt_lang');
+        return TRANSLATIONS[stored] ? stored : 'ko';
+      } catch {
+        return 'ko';
+      }
+    }
   );
 
   // html 요소에 data-lang 속성 설정 → CSS 폰트 적용용
@@ -14,8 +21,9 @@ export function LanguageProvider({ children }) {
   }, [lang]);
 
   const setLang = (l) => {
-    localStorage.setItem('drt_lang', l);
-    setLangState(l);
+    const nextLang = TRANSLATIONS[l] ? l : 'ko';
+    try { localStorage.setItem('drt_lang', nextLang); } catch { /* storage is unavailable */ }
+    setLangState(nextLang);
   };
 
   const t = TRANSLATIONS[lang] || TRANSLATIONS.ko;
