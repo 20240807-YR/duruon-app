@@ -408,7 +408,7 @@ export default function BookingScreen({ departure, destination: initialDest, use
               </span>
               <span>
                 <strong>간편 결제</strong>
-                <small>앱에서 바로 결제하고 예약을 확정합니다.</small>
+                <small>앱에서 바로 결제하고 예약을 완료해요!</small>
               </span>
             </button>
 
@@ -441,12 +441,12 @@ export default function BookingScreen({ departure, destination: initialDest, use
               </span>
               <span>
                 <strong>현장 결제</strong>
-                <small>탑승 시 기사 단말기 또는 교통카드로 결제합니다.</small>
+                <small>탑승 시 기사님 단말기나 교통카드로 결제해 주세요.</small>
               </span>
             </button>
 
             {paymentMethods.length === 0 && (
-              <p className="payment-register-hint">네이버페이/카카오페이는 마이페이지에서 등록할 수 있습니다.</p>
+              <p className="payment-register-hint">네이버페이/카카오페이는 마이페이지에서 등록할 수 있어요.</p>
             )}
 
             <button

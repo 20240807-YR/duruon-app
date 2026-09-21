@@ -126,7 +126,7 @@ export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavig
       <main className="ride-content">
         <section className="ride-heading">
           <h1>내 탑승</h1>
-          <p>예정된 여정과 과거 탑승 기록을 확인하세요.</p>
+          <p>다가오는 여정과 다녀온 기록을 볼 수 있어요.</p>
         </section>
 
         <section className="ride-section">
@@ -155,7 +155,7 @@ export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavig
                         ? '예약이 취소되었습니다.'
                       : '이용 완료'}
                 </strong>
-                {rideStatus === 'reserved' && <small>실시간으로 남은 시간이 줄어듭니다.</small>}
+                {rideStatus === 'reserved' && <small>실시간으로 남은 시간이 줄어들어요.</small>}
               </div>
 
               <div className="date-row">
@@ -247,8 +247,8 @@ export default function RideHistoryScreen({ bookingInfo, pastTrips = [], onNavig
           ) : (
             <article className="empty-upcoming-card">
               <Icon name="calendar" size={26} color="#9bb8b2" />
-              <strong>예정된 여정이 없습니다.</strong>
-              <p>홈에서 관광지를 선택하면 예약 내역이 여기에 표시됩니다.</p>
+              <strong>아직 예정된 여정이 없어요.</strong>
+              <p>홈에서 관광지를 고르고 예약하면 여기에 나타나요.</p>
               <button type="button" onClick={() => onNavigate?.('home')}>예약하러 가기</button>
             </article>
           )}

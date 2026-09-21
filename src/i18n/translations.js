@@ -42,7 +42,7 @@ export const TRANSLATIONS = {
     cancelBtn: '예약 취소',
 
     reviewTitle:        '탑승은 어떠셨나요?',
-    reviewSub:          '소중한 의견은 서비스 개선에 도움이 됩니다',
+    reviewSub:          '소중한 의견을 들려주시면 더 나은 서비스를 만드는 데 큰 도움이 돼요.',
     commentPlaceholder: '한 줄 코멘트 (선택사항)',
     submitReview:       '리뷰 제출',
     skipReview:         '건너뛰기',
