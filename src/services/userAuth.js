@@ -98,8 +98,11 @@ async function ensureUserProfile({ id, name, phone, accessToken, refreshToken })
       refreshToken,
       headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
     });
-  } catch {
-    throw new Error('로그인은 되었지만 사용자 프로필을 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+  } catch (error) {
+    // The on_auth_user_created trigger already provisions the profile, so this
+    // call is a safety net. Blocking sign-in when it fails would be worse than
+    // the gap it covers.
+    console.warn('user_profiles 사전 생성 실패(무시됨):', error);
   }
 }
 
