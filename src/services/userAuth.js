@@ -1,4 +1,5 @@
 import { hasSupabaseConfig, SUPABASE_ANON_KEY, SUPABASE_URL } from '../config/env';
+import { supabaseRequest } from './supabase';
 
 const STORAGE_KEY = 'duruon-user-session';
 const USERS_KEY = 'duruon-users';
@@ -11,6 +12,7 @@ const DEMO_USER = {
 };
 
 const AUTH_TIMEOUT_MS = 8000;
+const PROFILE_FALLBACK_PHONE = '미등록';
 const toAuthEmail = (value = '') => {
   const normalized = String(value).trim();
   return normalized.includes('@') ? normalized : `${normalized}@duruon.app`;
@@ -79,6 +81,28 @@ function sessionFromAuthData(data, fallback = {}) {
   };
 }
 
+async function ensureUserProfile({ id, name, phone, accessToken, refreshToken }) {
+  if (!id || !hasSupabaseConfig) return;
+
+  try {
+    // Ignore duplicate ids so an existing profile is never overwritten by sparse
+    // Auth metadata from a later login.
+    await supabaseRequest('user_profiles', {
+      method: 'POST',
+      body: JSON.stringify({
+        id,
+        name: String(name || '두루온 사용자').trim(),
+        phone: String(phone || PROFILE_FALLBACK_PHONE).trim(),
+      }),
+      accessToken,
+      refreshToken,
+      headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' },
+    });
+  } catch {
+    throw new Error('로그인은 되었지만 사용자 프로필을 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+  }
+}
+
 export async function signInUser(loginId, password) {
   const trimmedLoginId = String(loginId ?? '').trim();
   if (!trimmedLoginId || !password) throw new Error('아이디와 비밀번호를 입력해 주세요.');
@@ -86,7 +110,10 @@ export async function signInUser(loginId, password) {
   if (hasSupabaseConfig) {
     const data = await supabaseAuth('token?grant_type=password', { email: toAuthEmail(trimmedLoginId), password });
     if (!data?.user?.id || !data?.access_token) throw new Error('로그인 결과가 올바르지 않습니다. 다시 시도해 주세요.');
-    const user = sessionFromAuthData(data, { id: data.user.id, name: data.user.user_metadata?.name || trimmedLoginId, phone: data.user.user_metadata?.phone || '', loginId: data.user.email });
+    const name = data.user.user_metadata?.name || trimmedLoginId;
+    const phone = data.user.user_metadata?.phone || '';
+    await ensureUserProfile({ id: data.user.id, name, phone, accessToken: data.access_token, refreshToken: data.refresh_token });
+    const user = sessionFromAuthData(data, { id: data.user.id, name, phone, loginId: data.user.email });
     persistUser(user);
     return user;
   }
@@ -130,6 +157,7 @@ export async function signUpUser({ loginId, password, name, phone } = {}) {
   if (hasSupabaseConfig) {
     const data = await supabaseAuth('signup', { email: toAuthEmail(trimmedLoginId), password, data: { name: trimmedName, phone: trimmedPhone } });
     if (!data?.user || !data?.access_token) throw new Error('가입 확인 메일을 확인한 뒤 로그인해 주세요.');
+    await ensureUserProfile({ id: data.user.id, name: trimmedName, phone: trimmedPhone, accessToken: data.access_token, refreshToken: data.refresh_token });
     const user = sessionFromAuthData(data, { id: data.user.id, name: trimmedName, phone: trimmedPhone, loginId: trimmedLoginId });
     persistUser(user);
     return user;
