@@ -3,12 +3,15 @@
   padding: 0;
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
+  overflow-wrap: break-word;
 }
 
 /* ── 언어별 폰트 ── */
 :root,
 [data-lang="ko"] {
   font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* 한국어는 어절 단위로 줄바꿈 (ja/zh는 글자 단위 줄바꿈이 정상이라 제외) */
+  word-break: keep-all;
 }
 [data-lang="en"] {
   font-family: Helvetica, 'Helvetica Neue', Arial, sans-serif;
